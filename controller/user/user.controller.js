@@ -37,7 +37,7 @@ export const uploadImage = async(req,res) =>{
     const bucket = auth.storage().bucket();
     const file = req.file;
     let {phoneNumber, userName, userId , notificationToken} = req.body;
-  
+          
 
     try{
          if(file){
@@ -110,6 +110,7 @@ export const uploadImage = async(req,res) =>{
          }
     }
     catch(error){
+      console.log("======" , error);
       return res.status(500).send(error);
     }
 
@@ -243,7 +244,7 @@ export const updateUserProfile = async(req,res) => {
 export const uploadComplaint = async(req,res) => {
   const database = auth.database();
 
-  let { policeStationId, userId, complaintBy, complaint, isInjured, complaint_location , hospitalId} = req.body;
+  let { policeStationId, userId, complaintBy, complaint, isInjured, complaint_location , hospitalId , phoneNumber} = req.body;
   complaint_location = JSON.parse(complaint_location)
   const bucket = auth.storage().bucket();
   const files = req.files;
@@ -271,6 +272,8 @@ export const uploadComplaint = async(req,res) => {
   if (!isInjured) {
     return res.status(400).send("Injured or not provided");
   }
+
+  
 
 
   
@@ -308,11 +311,15 @@ export const uploadComplaint = async(req,res) => {
           complaint_imageUrl.push(complaint_image);
           if (complaint_imageUrl.length === files.length) {
             const userRef = database.ref(`users/${userId}/complaint`);
-            userRef.push().set({
+            const key = userRef.push().key;
+            userRef.child(key).set({
+              "complaitId":key,
               "complainerId": userId,
               "complaintBy": complaintBy,
               "complaint": complaint,
               "isInjured": isInjured,
+              "complaintStatus": "pending",
+              "phoneNumber": phoneNumber,
               "createdAt": new Date().toJSON(),
               "complaintLocation": complaint_location,
               "complaintImage": complaint_imageUrl,
@@ -320,11 +327,14 @@ export const uploadComplaint = async(req,res) => {
             });
 
             const policeRef = database.ref(`police_station/${policeStationId}/complaints`);
-            policeRef.push().set({
+            policeRef.child(key).set({
+              "complaitId":key,
               "complainerId": userId,
               "complaintBy": complaintBy,
               "complaint": complaint,
+              "complaintStatus": "pending",
               "isInjured": isInjured,
+              "phoneNumber": phoneNumber,
               "createdAt": new Date().toJSON(),
               "complaintLocation": complaint_location,
               "complaintImage": complaint_imageUrl,
@@ -333,19 +343,22 @@ export const uploadComplaint = async(req,res) => {
 
 
             if(isInjured === "Yes"){
-               const hospitalRef = database.ref(`hospital/${hospitalId}/complaints`);{
-                hospitalRef.push().set({
+               const hospitalRef = database.ref(`hospital/${hospitalId}/complaints`);
+                hospitalRef.child(key).set({
+                  "complaitId":key,
                   "complainerId": userId,
                   "complaintBy": complaintBy,
                   "complaint": complaint,
+                  "complaintStatus": "pending",
                   "isInjured": isInjured,
+                  "phoneNumber": phoneNumber,
                   "createdAt": new Date().toJSON(),
                   "complaintLocation": complaint_location,
                   "complaintImage": complaint_imageUrl,
                   "nearestPoliceStationId": policeStationId,
                   "nearestHospitalId":hospitalId,
                 }); 
-               }
+               
             }
 
                       
@@ -362,22 +375,29 @@ export const uploadComplaint = async(req,res) => {
     }
     else {
       const userRef = database.ref(`users/${userId}/complaint`);
-      userRef.push().set({
+      const key = userRef.push().key;
+      userRef.child(key).set({
+        "complaitId":key,
         "complainerId": userId,
         "complaintBy": complaintBy,
         "complaint": complaint,
+        "complaintStatus": "pending",
         "isInjured": isInjured,
+        "phoneNumber": phoneNumber,
         "createdAt": new Date().toJSON(),
         "complaint_location": complaint_location,
         "nearestPoliceStationId": policeStationId,
       });
 
       const policeRef = database.ref(`police_station/${policeStationId}/complaints`);
-      policeRef.push().set({
+      policeRef.child(key).set({
+        "complaitId":key,
         "complainerId": userId,
         "complaintBy": complaintBy,
         "complaint": complaint,
+        "complaintStatus": "pending",
         "isInjured": isInjured,
+        "phoneNumber": phoneNumber,
         "createdAt": new Date().toJSON(),
         "complaintLocation": complaint_location,
         "nearestPoliceStationId": policeStationId,
@@ -386,11 +406,14 @@ export const uploadComplaint = async(req,res) => {
 
       if(isInjured === "Yes"){
         const hospitalRef = database.ref(`hospital/${hospitalId}/complaints`);{
-         hospitalRef.push().set({
+         hospitalRef.child(key).set({
+           "complaitId":key,
            "complainerId": userId,
            "complaintBy": complaintBy,
            "complaint": complaint,
+           "complaintStatus": "pending",
            "isInjured": isInjured,
+           "phoneNumber": phoneNumber,
            "createdAt": new Date().toJSON(),
            "complaintLocation": complaint_location,
            "nearestPoliceStationId": policeStationId,
@@ -448,4 +471,60 @@ export const deleteAccount = async(req,res) => {
     return res.status(200).send("Account Deleted Successfully");
 }
 
+export const fetchComplaint = async(req,res) => {
+  const database = auth.database();
+  let complaintsData = [];
+  const {userId} = req.body;
+  if(!userId){
+    return res.status(400).send('UserId not provided');  
+  } 
+  const userRef = database.ref(`users/${userId}/complaint`); 
 
+  await userRef.get().then((snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      for (const id in data) {
+        const ComplaintData = data[id];
+        complaintsData.push(ComplaintData);
+      }
+    }
+  })
+
+
+
+  let userComplaints = [];
+  for (let i = 0; i < complaintsData.length; i++) {
+    let complaintsImageBuffer = [];
+    let complaints = complaintsData[i];
+    let complaintsImage = complaints.complaintImage;
+
+    if (complaintsImage !== undefined) {
+      for (let j = 0; j < complaintsImage.length; j++) {
+        const filePath = complaintsImage[j].replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
+        const [imageBuffer] = await auth.storage().bucket().file(filePath).download();
+        complaintsImageBuffer.push({ imageBuffer });
+      }
+      userComplaints.push({ complaints, complaintsImageBuffer });
+    }
+    else {
+      userComplaints.push({ complaints });
+    }
+
+  }
+
+  console.log(userComplaints);
+  return res.status(200).send(userComplaints);
+
+
+}
+
+
+export const updateComplaintStatus = async(req,res) => {
+   const database = auth.database();
+   const {userId} = req.body;
+   if(!userId){
+     return res.status(400).send('UserId not provided');  
+   } 
+
+   
+}

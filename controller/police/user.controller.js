@@ -253,6 +253,7 @@ export const fetchUserComplaints = async(req,res) => {
      if(!userId){
         return res.status(400).send('UserId not provided');  
      }
+     console.log(userId);
 
      const database = auth.database();
      const policeRef = database.ref(`police_station/${userId}/complaints`);
@@ -270,11 +271,11 @@ export const fetchUserComplaints = async(req,res) => {
     
 
     let userComplaints = []; 
-     for(let i=0;  i < complaintsData.length; i++){
+    for(let i=0;  i < complaintsData.length; i++){
              let complaintsImageBuffer = [];
              let complaints = complaintsData[i];
              let complaintsImage = complaints.complaintImage;
-             console.log(complaintsImage);
+
              if(complaintsImage !== undefined){
                 for(let j=0; j < complaintsImage.length; j++){
                     const filePath = complaintsImage[j].replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
@@ -283,14 +284,13 @@ export const fetchUserComplaints = async(req,res) => {
                  }
                  userComplaints.push({complaints , complaintsImageBuffer});
              }
+             else{
+                userComplaints.push({complaints});
+             }
+                        
+    } 
 
-             
-           
-             userComplaints.push({complaints});
-            
-     } 
-
-
+     console.log(userComplaints);    
      return res.status(200).send(userComplaints);
 
 }

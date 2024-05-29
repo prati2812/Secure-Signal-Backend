@@ -8,6 +8,7 @@ export const userProfileCreation = async(req,res) => {
     const bucket = auth.storage().bucket();
     const file = req.file;
     let {phoneNumber, userName , userId , location , notificationToken} = req.body;
+    console.log(phoneNumber);
     console.log(notificationToken);
     location = JSON.parse(location);
     try{
@@ -158,11 +159,12 @@ export const fetchUserComplaints = async(req,res) => {
     if(!userId){
        return res.status(400).send('UserId not provided');  
     }
+    console.log(userId);
 
     const database = auth.database();
-    const policeRef = database.ref(`hospital/${userId}/complaints`);
+    const hospitalRef = database.ref(`hospital/${userId}/complaints`);
 
-    await policeRef.get().then((snapshot) => {
+    await hospitalRef.get().then((snapshot) => {
        const data = snapshot.val();
        if(data){
            for(const id in data){
@@ -179,7 +181,7 @@ export const fetchUserComplaints = async(req,res) => {
             let complaintsImageBuffer = [];
             let complaints = complaintsData[i];
             let complaintsImage = complaints.complaintImage;
-            console.log(complaintsImage);
+            
             if(complaintsImage !== undefined){
                for(let j=0; j < complaintsImage.length; j++){
                    const filePath = complaintsImage[j].replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
@@ -187,15 +189,14 @@ export const fetchUserComplaints = async(req,res) => {
                    complaintsImageBuffer.push({imageBuffer});
                 }
                 userComplaints.push({complaints , complaintsImageBuffer});
+            } 
+            else{
+                userComplaints.push({complaints});
             }
-
-            
-          
-            userComplaints.push({complaints});
-           
+        
     } 
 
-
+    console.log(userComplaints); 
     return res.status(200).send(userComplaints);
 
 }
