@@ -3,13 +3,38 @@ import {auth} from '../../db/connection.js';
 import jwt from 'jsonwebtoken';
 
 
+export const userAuthentication = async(req,res) => {
+    const { phoneNumber, userId } = req.body;
+  
+    if (!userId) {
+      return res.status(400).send('UserId not provided');
+    }
+  
+    const database = auth.database();
+    const userRef = database.ref(`hospital/${userId}/hospitalProfile`);
+  
+    
+    userRef.once('value', async (snapshot) => {
+      const userProfile = snapshot.val();
+  
+      if (userProfile && userProfile.phoneNumber) {
+        await userRef.update({ phoneNumber });
+      } else {
+        await userRef.set({ phoneNumber });
+      }
+  
+      const token = jwt.sign({ userId }, 'JSON-TOKEN', { expiresIn: '30d' });
+      res.status(201).json({ token });
+  });
+    
+  
+}
+  
 export const userProfileCreation = async(req,res) => {
 
     const bucket = auth.storage().bucket();
     const file = req.file;
     let {phoneNumber, userName , userId , location , notificationToken} = req.body;
-    console.log(phoneNumber);
-    console.log(notificationToken);
     location = JSON.parse(location);
     try{
         if(file){
@@ -34,11 +59,10 @@ export const userProfileCreation = async(req,res) => {
         
             blobStream.on("finish" , async() => {
                 const imageUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-                const token = jwt.sign({userId} , 'JSON-TOKEN' , {expiresIn : '30d'});
                 try{
                    const database = auth.database();
                    const policeRef = database.ref(`hospital/${userId}/hospitalProfile`);
-                   policeRef.set({
+                   policeRef.update({
                       "phoneNumber" : phoneNumber,
                       "userName" : userName,
                       "imageUrl":imageUrl,
@@ -46,10 +70,10 @@ export const userProfileCreation = async(req,res) => {
                       "notificationToken":notificationToken,
                    }); 
         
-                   return res.status(200).json({imageUrl , token});
+                   return res.status(200).json({ message: "User Data saved successfully" });
                 }
                 catch(error){
-                    res.status(500).send('Error Saving User Data');
+                   return res.status(500).send('Error Saving User Data');
                 }
         
                 
@@ -60,8 +84,6 @@ export const userProfileCreation = async(req,res) => {
         }
         else if(phoneNumber || userName){
                 try{
-                   console.log("hello");
-                   const token = jwt.sign({userId} , 'JSON-TOKEN' , {expiresIn : '30d'});
                    const database = auth.database();
                    const policeRef = database.ref(`hospital/${userId}/hospitalProfile`);
                    await policeRef.update({
@@ -73,7 +95,7 @@ export const userProfileCreation = async(req,res) => {
                       "deletionTime":null,
                    }); 
         
-                   return res.status(200).json({token});
+                   return res.status(200).json({ message: "User Data saved successfully" });
                 }
                 catch(error){
                     console.log(error);
@@ -178,22 +200,8 @@ export const fetchUserComplaints = async(req,res) => {
 
    let userComplaints = []; 
     for(let i=0;  i < complaintsData.length; i++){
-            let complaintsImageBuffer = [];
             let complaints = complaintsData[i];
-            let complaintsImage = complaints.complaintImage;
-            
-            if(complaintsImage !== undefined){
-               for(let j=0; j < complaintsImage.length; j++){
-                   const filePath = complaintsImage[j].replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
-                   const [imageBuffer] = await auth.storage().bucket().file(filePath).download();
-                   complaintsImageBuffer.push({imageBuffer});
-                }
-                userComplaints.push({complaints , complaintsImageBuffer});
-            } 
-            else{
-                userComplaints.push({complaints});
-            }
-        
+            userComplaints.push({complaints});
     } 
 
     console.log(userComplaints); 
@@ -296,3 +304,54 @@ export const deleteUserAccount = async(req,res) => {
 
 
 }
+
+
+export const updateComplaintStatus = async(req,res) => {
+  const database = auth.database();
+  const {userId, policeStationId , hospitalId , complaintId, isInjured,newStatus} = req.body;
+  if(!userId){
+    return res.status(400).send('UserId not provided');  
+  }
+
+  if(!policeStationId){
+    return res.status(400).send('PoliceStationId not provided');
+  }
+
+  if(!hospitalId){
+    return res.status(400).send('HospitalId is not provided');
+  }
+
+  if(!complaintId){
+    return res.status(400).send('ComplaintId is not provided');
+  }
+  
+  if(!newStatus){
+    return res.status(400).send('status is not provided'); 
+  }
+
+
+  const updates = {};
+  updates[`/users/${userId}/complaints/${complaintId}/hospitalStatus`] = newStatus;
+  updates[`/police_station/${policeStationId}/complaints/${complaintId}/hospitalStatus`] = newStatus;
+  if (isInjured === "Yes") {
+    updates[`/hospital/${hospitalId}/complaints/${complaintId}/hospitalStatus`] = newStatus;
+  }
+
+
+
+  database.ref().update(updates)
+  .then(() => {
+    console.log("saveddd");
+    return res.status(200).send("Update Status");
+  })
+  .catch(error => {
+    console.log('Error updating database:', error);
+    return res.status(500).send(error);
+  });
+
+  
+
+  
+}
+
+

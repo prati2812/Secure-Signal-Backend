@@ -5,7 +5,8 @@ import {uploadImage ,
      uploadComplaint,
      deleteAccount,
      userAuthentication,
-     fetchComplaint} 
+     fetchComplaint,
+     updateComplaintStatus} 
 from '../../controller/user/user.controller.js';
 import multer from 'multer';
 import { authentication } from '../../middleware/authentication.js';
@@ -25,7 +26,7 @@ userRouter.post("/updateUserProfile" ,authentication, upload.single('image') , u
 userRouter.post("/uploadComplaints" , authentication , upload.array('image'), uploadComplaint);
 userRouter.post("/deleteUserAccount" , authentication , deleteAccount);
 userRouter.post("/user/fetchComplaint", authentication , fetchComplaint);
-
+userRouter.post("/user/updateComplaint" , authentication , updateComplaintStatus);
 
 
 

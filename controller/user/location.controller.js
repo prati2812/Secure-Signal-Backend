@@ -111,13 +111,14 @@ export const shareLiveLocationToNearestPoliceStation = async(req,res) => {
 
 export const findNearestPoliceStation = async(req,res) => {
    
-    const {userId} = req.body;
+    const {userId , currentLatitude , currentLongitude} = req.body;
    
     if(!userId){
        return res.status(400).send("User Id is not provided");
     }
 
    
+
     const database = auth.database();
     const registeredPoliceStation = []; 
 
@@ -130,40 +131,38 @@ export const findNearestPoliceStation = async(req,res) => {
                      const policeData = data[id];
                      const policeStationProfile = policeData.policeStationProfile;
                      const policeStationLocation = policeStationProfile.policeStationLocation;
-                     registeredPoliceStation.push({policeStationLocation , id}); 
+                     registeredPoliceStation.push({policeStationLocation , id , policeStationProfile}); 
                  }
              }
          }
     });
 
 
-    const currentLatitude = parseFloat(21.1453459);
-    const currentLongtitude  = parseFloat(72.75676);
+  
 
-    let nearestPoliceStation = null;
-    let minDistance = Infinity;
+   
+    let nearestPoliceStation = registeredPoliceStation
+        .map(station => {
+            const latitude = station.policeStationLocation.latitude;
+            const longitude = station.policeStationLocation.longtitude;
+            const distance = getDistance(Number(currentLatitude), Number(currentLongitude), latitude, longitude);
+            
+            return { ...station, distance };
+        })
 
-    registeredPoliceStation.forEach(station => {
-          const latitude = station.policeStationLocation.latitude;
-          const longtitude = station.policeStationLocation.longtitude;
-           
-         const distance = getDistance(currentLatitude , currentLongtitude , latitude , longtitude);
-         if(distance < minDistance){
-              minDistance = distance;
-              nearestPoliceStation = station;
-         } 
-          
-    });
+     nearestPoliceStation = nearestPoliceStation.filter(station => {
+      return  station.distance <= 13320;
+     });
 
+     
+    return res.status(200).send({nearestPoliceStation});
 
-       
-    return res.status(200).send({nearestPoliceStation , minDistance});
 
 }
 
 export const findNearestHospital = async(req,res) => {
    
-  const {userId} = req.body;
+  const {userId , currentLatitude , currentLongitude} = req.body;
  
   if(!userId){
      return res.status(400).send("User Id is not provided");
@@ -182,34 +181,33 @@ export const findNearestHospital = async(req,res) => {
                    const hospitalData = data[id];
                    const hospitalProfile = hospitalData.hospitalProfile;
                    const hospitalLocation = hospitalProfile.hospitalLocation;
-                   registeredHospital.push({hospitalLocation , id}); 
+                   registeredHospital.push({hospitalLocation , id , hospitalProfile}); 
                }
            }
        }
   });
 
 
-  const currentLatitude = parseFloat(21.1453459);
-  const currentLongtitude  = parseFloat(72.75676);
+  
 
-  let nearestHospital = null;
-  let minDistance = Infinity;
+  
+  let nearestHospital = registeredHospital.map(station => {
+    const latitude = station.hospitalLocation.latitude;
+    const longitude = station.hospitalLocation.longtitude;
+    const distance = getDistance(Number(currentLatitude), Number(currentLongitude), latitude, longitude);
+    console.log(currentLatitude , currentLongitude);
+    console.log(distance);      
+    return { ...station, distance };
+  })
 
-  registeredHospital.forEach(station => {
-        const latitude = station.hospitalLocation.latitude;
-        const longtitude = station.hospitalLocation.longtitude;
-         
-       const distance = getDistance(currentLatitude , currentLongtitude , latitude , longtitude);
-       if(distance < minDistance){
-            minDistance = distance;
-            nearestHospital = station;
-       } 
-        
+  nearestHospital = nearestHospital.filter(station => {
+    return station.distance <= 13320;
   });
 
 
+
      
-  return res.status(200).send({nearestHospital , minDistance});
+  return res.status(200).send({nearestHospital});
 
 }
 
@@ -301,6 +299,8 @@ export const deleteTravellingLocation = async(req,res) => {
 }
 
 function getDistance(currentLatitude , currentLongtitude, latitude , longtitude){
+  
+
   const R = 6371; 
   const dLat = deg2rad(latitude - currentLatitude);
   const dLon = deg2rad(longtitude - currentLongtitude);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authentication } from '../../middleware/authentication.js';
-import { deleteAllLiveLocationNotificationData, fetchLiveLocationNotificatioPoliceStation, markAllReadLiveLocationNotification, markAsReadLiveLocationNotification, saveLiveLocationNotificationPoliceStation } from "../../controller/police/notification.controller.js";
+import { deleteAllLiveLocationNotificationData, fetchLiveLocationNotificatioPoliceStation, markAllReadLiveLocationNotification, markAsReadLiveLocationNotification, saveLiveLocationNotificationPoliceStation, sendNotificationToComplainer } from "../../controller/police/notification.controller.js";
 
 
 
@@ -11,6 +11,6 @@ notificationRouter.post("/policeStation/LiveLocation/fetchNotification" , authen
 notificationRouter.post("/policeStation/LiveLocation/markAsRead" , authentication , markAsReadLiveLocationNotification);
 notificationRouter.post("/policeStation/LiveLocation/markAsAllRead", authentication, markAllReadLiveLocationNotification);
 notificationRouter.post("/policeStation/LiveLocation/deleteAllNotification" , authentication, deleteAllLiveLocationNotificationData);
-
+notificationRouter.post("/policeStation/Notification/sendNotificationComplainer" , authentication , sendNotificationToComplainer);
 
 export default notificationRouter;

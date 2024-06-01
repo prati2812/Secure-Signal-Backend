@@ -241,6 +241,7 @@ export const updateUserProfile = async(req,res) => {
    
 }
 
+
 export const uploadComplaint = async(req,res) => {
   const database = auth.database();
 
@@ -310,60 +311,81 @@ export const uploadComplaint = async(req,res) => {
           const complaint_image = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
           complaint_imageUrl.push(complaint_image);
           if (complaint_imageUrl.length === files.length) {
-            const userRef = database.ref(`users/${userId}/complaint`);
-            const key = userRef.push().key;
-            userRef.child(key).set({
-              "complaitId":key,
-              "complainerId": userId,
-              "complaintBy": complaintBy,
-              "complaint": complaint,
-              "isInjured": isInjured,
-              "complaintStatus": "pending",
-              "phoneNumber": phoneNumber,
-              "createdAt": new Date().toJSON(),
-              "complaintLocation": complaint_location,
-              "complaintImage": complaint_imageUrl,
-              "nearestPoliceStationId": policeStationId,
-            });
+            const userRef = database.ref(`users/${userId}/complaints`);
+            const complaintKey = userRef.push().key;
 
-            const policeRef = database.ref(`police_station/${policeStationId}/complaints`);
-            policeRef.child(key).set({
-              "complaitId":key,
-              "complainerId": userId,
-              "complaintBy": complaintBy,
-              "complaint": complaint,
-              "complaintStatus": "pending",
-              "isInjured": isInjured,
-              "phoneNumber": phoneNumber,
-              "createdAt": new Date().toJSON(),
-              "complaintLocation": complaint_location,
-              "complaintImage": complaint_imageUrl,
-              "nearestPoliceStationId": policeStationId,
-            });
+            const complaintData = {
+              complaintId: complaintKey,
+              complainerId: userId,
+              complaintBy: complaintBy,
+              complaint: complaint,
+              complaintStatus: "pending",
+              isInjured: isInjured,
+              phoneNumber: phoneNumber,
+              createdAt: new Date().toJSON(),
+              complaintLocation: complaint_location,
+              complaintImage: complaint_imageUrl,
+              nearestPoliceStationId: policeStationId,
+              nearestHospitalId: hospitalId,
+            };
+
+            // const policeRef = database.ref(`police_station/${policeStationId}/complaints`);
+            // policeRef.child(key).set({
+            //   "complaitId":key,
+            //   "complainerId": userId,
+            //   "complaintBy": complaintBy,
+            //   "complaint": complaint,
+            //   "complaintStatus": "pending",
+            //   "isInjured": isInjured,
+            //   "phoneNumber": phoneNumber,
+            //   "createdAt": new Date().toJSON(),
+            //   "complaintLocation": complaint_location,
+            //   "complaintImage": complaint_imageUrl,
+            //   "nearestPoliceStationId": policeStationId,
+            // });
 
 
-            if(isInjured === "Yes"){
-               const hospitalRef = database.ref(`hospital/${hospitalId}/complaints`);
-                hospitalRef.child(key).set({
-                  "complaitId":key,
-                  "complainerId": userId,
-                  "complaintBy": complaintBy,
-                  "complaint": complaint,
-                  "complaintStatus": "pending",
-                  "isInjured": isInjured,
-                  "phoneNumber": phoneNumber,
-                  "createdAt": new Date().toJSON(),
-                  "complaintLocation": complaint_location,
-                  "complaintImage": complaint_imageUrl,
-                  "nearestPoliceStationId": policeStationId,
-                  "nearestHospitalId":hospitalId,
-                }); 
+            // if(isInjured === "Yes"){
+            //    const hospitalRef = database.ref(`hospital/${hospitalId}/complaints`);
+            //     hospitalRef.child(key).set({
+            //       "complaitId":key,
+            //       "complainerId": userId,
+            //       "complaintBy": complaintBy,
+            //       "complaint": complaint,
+            //       "complaintStatus": "pending",
+            //       "isInjured": isInjured,
+            //       "phoneNumber": phoneNumber,
+            //       "createdAt": new Date().toJSON(),
+            //       "complaintLocation": complaint_location,
+            //       "complaintImage": complaint_imageUrl,
+            //       "nearestPoliceStationId": policeStationId,
+            //       "nearestHospitalId":hospitalId,
+            //     }); 
                
+            // }
+              
+
+              
+            const updates = {};
+            updates[`/users/${userId}/complaints/${complaintKey}`] = complaintData;
+            updates[`/police_station/${policeStationId}/complaints/${complaintKey}`] = complaintData;
+
+            if (isInjured === "Yes") {
+                updates[`/hospital/${hospitalId}/complaints/${complaintKey}`] = complaintData;
             }
 
+            database.ref().update(updates)
+                .then(() =>{
+                   console.log("saveddd");
+                   return res.status(200).send("Complaint saved successfully") 
+                })
+                .catch(error => {
+                    console.log('Error updating database:', error);
+                    return res.status(500).send(error);
+                });
                       
 
-            return res.status(200).send("Complaint save successfully");
+            // return res.status(200).send("Complaint save successfully");
           }
         })
 
@@ -374,71 +396,57 @@ export const uploadComplaint = async(req,res) => {
 
     }
     else {
-      const userRef = database.ref(`users/${userId}/complaint`);
-      const key = userRef.push().key;
-      userRef.child(key).set({
-        "complaitId":key,
-        "complainerId": userId,
-        "complaintBy": complaintBy,
-        "complaint": complaint,
-        "complaintStatus": "pending",
-        "isInjured": isInjured,
-        "phoneNumber": phoneNumber,
-        "createdAt": new Date().toJSON(),
-        "complaint_location": complaint_location,
-        "nearestPoliceStationId": policeStationId,
-      });
+      const userRef = database.ref(`users/${userId}/complaints`);
+      const complaintKey = userRef.push().key;
 
-      const policeRef = database.ref(`police_station/${policeStationId}/complaints`);
-      policeRef.child(key).set({
-        "complaitId":key,
-        "complainerId": userId,
-        "complaintBy": complaintBy,
-        "complaint": complaint,
-        "complaintStatus": "pending",
-        "isInjured": isInjured,
-        "phoneNumber": phoneNumber,
-        "createdAt": new Date().toJSON(),
-        "complaintLocation": complaint_location,
-        "nearestPoliceStationId": policeStationId,
-      });
+      const complaintData = {
+        complaintId: complaintKey,
+        complainerId: userId,
+        complaintBy: complaintBy,
+        complaint: complaint,
+        complaintStatus: "pending",
+        isInjured: isInjured,
+        phoneNumber: phoneNumber,
+        createdAt: new Date().toJSON(),
+        complaintLocation: complaint_location,
+        nearestPoliceStationId: policeStationId,
+        nearestHospitalId: hospitalId,
+      };
 
 
-      if(isInjured === "Yes"){
-        const hospitalRef = database.ref(`hospital/${hospitalId}/complaints`);{
-         hospitalRef.child(key).set({
-           "complaitId":key,
-           "complainerId": userId,
-           "complaintBy": complaintBy,
-           "complaint": complaint,
-           "complaintStatus": "pending",
-           "isInjured": isInjured,
-           "phoneNumber": phoneNumber,
-           "createdAt": new Date().toJSON(),
-           "complaintLocation": complaint_location,
-           "nearestPoliceStationId": policeStationId,
-           "nearestHospitalId":hospitalId,
-         }); 
-        }
+      const updates = {};
+      updates[`/users/${userId}/complaints/${complaintKey}`] = complaintData;
+      updates[`/police_station/${policeStationId}/complaints/${complaintKey}`] = complaintData;
+
+      if (isInjured === "Yes") {
+        updates[`/hospital/${hospitalId}/complaints/${complaintKey}`] = complaintData;
+      }
+
+      database.ref().update(updates)
+        .then(() => {
+          console.log("saveddd");
+          return res.status(200).send("Complaint saved successfully")
+        })
+        .catch(error => {
+          console.log('Error updating database:', error);
+          return res.status(500).send(error);
+        });
+
+     
+      
+      
      }
-
-
-
-      return res.status(200).send("Complaint save successfully");
+      
+    }
+    catch (error) {
+      console.log(error);
+      return res.status(500).send(error);
     }
 
-  }
-  catch (error) {
-    console.log(error);
-    return res.status(500).send(error);
-  }
-
-  
-
- 
- 
-  
 }
+    
+
+
 
 export const deleteAccount = async(req,res) => {
     const database = auth.database();
@@ -478,7 +486,7 @@ export const fetchComplaint = async(req,res) => {
   if(!userId){
     return res.status(400).send('UserId not provided');  
   } 
-  const userRef = database.ref(`users/${userId}/complaint`); 
+  const userRef = database.ref(`users/${userId}/complaints`); 
 
   await userRef.get().then((snapshot) => {
     const data = snapshot.val();
@@ -512,7 +520,7 @@ export const fetchComplaint = async(req,res) => {
 
   }
 
-  console.log(userComplaints);
+  
   return res.status(200).send(userComplaints);
 
 
@@ -521,10 +529,49 @@ export const fetchComplaint = async(req,res) => {
 
 export const updateComplaintStatus = async(req,res) => {
    const database = auth.database();
-   const {userId} = req.body;
+   const {userId, policeStationId , hospitalId , complaintId, isInjured,newStatus} = req.body;
    if(!userId){
      return res.status(400).send('UserId not provided');  
-   } 
+   }
+ 
+   if(!policeStationId){
+     return res.status(400).send('PoliceStationId not provided');
+   }
+
+   if(!hospitalId){
+     return res.status(400).send('HospitalId is not provided');
+   }
+
+   if(!complaintId){
+     return res.status(400).send('ComplaintId is not provided');
+   }
+   
+   if(!newStatus){
+     return res.status(400).send('status is not provided'); 
+   }
+
+
+   const updates = {};
+   updates[`/users/${userId}/complaints/${complaintId}/complaintStatus`] = newStatus;
+   updates[`/police_station/${policeStationId}/complaints/${complaintId}/complaintStatus`] = newStatus;
+
+   if (isInjured === "Yes") {
+       updates[`/hospital/${hospitalId}/complaints/${complaintId}/complaintStatus`] = newStatus;
+   }
+
+
+
+   database.ref().update(updates)
+   .then(() => {
+     console.log("saveddd");
+     return res.status(200).send("Update Status");
+   })
+   .catch(error => {
+     console.log('Error updating database:', error);
+     return res.status(500).send(error);
+   });
+
+   
 
    
 }
