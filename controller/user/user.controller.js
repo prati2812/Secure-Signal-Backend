@@ -502,22 +502,8 @@ export const fetchComplaint = async(req,res) => {
 
   let userComplaints = [];
   for (let i = 0; i < complaintsData.length; i++) {
-    let complaintsImageBuffer = [];
     let complaints = complaintsData[i];
-    let complaintsImage = complaints.complaintImage;
-
-    if (complaintsImage !== undefined) {
-      for (let j = 0; j < complaintsImage.length; j++) {
-        const filePath = complaintsImage[j].replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
-        const [imageBuffer] = await auth.storage().bucket().file(filePath).download();
-        complaintsImageBuffer.push({ imageBuffer });
-      }
-      userComplaints.push({ complaints, complaintsImageBuffer });
-    }
-    else {
-      userComplaints.push({ complaints });
-    }
-
+    userComplaints.push({ complaints });
   }
 
   

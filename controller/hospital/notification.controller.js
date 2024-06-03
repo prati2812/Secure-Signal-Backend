@@ -42,3 +42,43 @@ export const sendNotificationToComplainer = async(req,res) => {
     }
 
 }
+
+
+export const saveComplaintHospitalStatusNotification = async(req,res) => {
+
+    const {userId , senderName} = req.body;
+
+    console.log(userId);
+    console.log("Name",senderName);
+
+
+    if(!userId){
+        return res.status(400).send('UserId is not provided');
+    }
+    if(!senderName){
+        return res.status(400).send('SenderName is not provided');
+    }
+
+    try{
+        const database = auth.database();
+        const userRef = database.ref(`users/${userId}/notifications/hospitalComplaintStatus`);
+        const key = userRef.push().key;
+        console.log(key);
+        userRef.child(key).set({
+            "senderName": senderName,
+            "timeStamp": new Date().toLocaleString(),
+            "isRead" : false,
+            "notification_id": key,    
+        });
+
+        console.log("saved");
+        return res.status(200).send("Notification Saved Successfully"); 
+        
+
+    }
+    catch(error){
+        console.log(error);
+        return res.status(500).send(error);
+    }
+
+}

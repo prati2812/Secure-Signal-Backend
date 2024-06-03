@@ -302,6 +302,60 @@ export const fetchSafeArrivalNotification = async(req,res) => {
     return res.status(200).send(notificationData);
 }
 
+export const fetchHospitalStatusNotification = async(req,res) => {
+    const {userId} = req.body;
+    let notificationData = [];
+
+    if(!userId){
+        return res.status(400).send('UserId is not provided');
+    }
+
+    const userRef = database.ref(`users/${userId}/notifications/hospitalComplaintStatus`);
+    
+
+    await userRef.get().then((snapshot) => {
+        const data = snapshot.val();
+        if(data){
+            for(const id in data){
+                const notification = data[id];
+                notificationData.push(notification);
+            }
+        }
+        
+    });
+
+
+    return res.status(200).send(notificationData);
+}
+
+export const fetchPoliceStationStatusNotification = async(req,res) => {
+    const {userId} = req.body;
+    let notificationData = [];
+
+    if(!userId){
+        return res.status(400).send('UserId is not provided');
+    }
+
+    const userRef = database.ref(`users/${userId}/notifications/policeStationComplaintStatus`);
+    
+
+    await userRef.get().then((snapshot) => {
+        const data = snapshot.val();
+        if(data){
+            for(const id in data){
+                const notification = data[id];
+                notificationData.push(notification);
+            }
+        }
+        
+    });
+
+
+    return res.status(200).send(notificationData);
+}
+
+
+
 export const markAsReadNotification = async(req,res) => {
     const {userId , notificationId} = req.body;
 
@@ -364,6 +418,45 @@ export const markSafeArrivalAsReadNotification = async(req,res) => {
     return res.status(200).send("Notification Read Successfully");
 }
 
+export const markHospitalStatusReadNotification = async(req,res) => {
+    const {userId , notificationId} = req.body;
+
+    
+    if(!userId){
+        return res.status(400).send('UserId is not provided');
+    }
+
+    if(!notificationId){
+        return res.status(400).send('NotificationId is not provided');
+    }
+
+    const userRef = database.ref(`users/${userId}/notifications/hospitalComplaintStatus/${notificationId}`);
+    
+    await userRef.update({"isRead" : true});
+
+    
+    return res.status(200).send("Notification Read Successfully");
+}
+
+export const markPoliceStationReadNotification = async(req,res) => {
+    const {userId , notificationId} = req.body;
+
+    
+    if(!userId){
+        return res.status(400).send('UserId is not provided');
+    }
+
+    if(!notificationId){
+        return res.status(400).send('NotificationId is not provided');
+    }
+
+    const userRef = database.ref(`users/${userId}/notifications/policeStationComplaintStatus/${notificationId}`);
+    
+    await userRef.update({"isRead" : true});
+
+    
+    return res.status(200).send("Notification Read Successfully");
+}
 
 
 export const markAllReadNotification = async(req,res) => {
@@ -410,6 +503,28 @@ export const markAllReadNotification = async(req,res) => {
         }
     })
 
+
+    const userHospitalNotificationRef = database.ref(`users/${userId}/notifications/hospitalComplaintStatus`);
+
+    await userHospitalNotificationRef.get().then((snapshot) => {
+        const data = snapshot.val();
+        if(data){
+            for(const id in data){
+                userHospitalNotificationRef.child(id).update({"isRead": true});
+            }
+        }
+    })
+
+    const userPoliceStationNotificationRef = database.ref(`users/${userId}/notifications/policeStationComplaintStatus`);
+
+    await userPoliceStationNotificationRef.get().then((snapshot) => {
+        const data = snapshot.val();
+        if(data){
+            for(const id in data){
+                userPoliceStationNotificationRef.child(id).update({"isRead": true});
+            }
+        }
+    })
 
     return res.status(200).send("All Notification Read as Successfully");
 

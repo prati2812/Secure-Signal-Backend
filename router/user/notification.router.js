@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authentication } from '../../middleware/authentication.js';
-import {deleteAllNotification, fetchEmergencyContactNotification, fetchLiveLocationNotification, fetchSafeArrivalNotification, markAllReadNotification, markAsReadNotification, markLiveLocationAsReadNotification, markSafeArrivalAsReadNotification, saveEmergencyContactNotification, saveLiveLocationNotification, saveSafelyArraivalNotification, sendNotificationEmergencyContact, sendNotificationToNearestHospital, sendNotificationToNearestPoliceStation } from "../../controller/user/notification.controller.js";
+import {deleteAllNotification, fetchEmergencyContactNotification, fetchHospitalStatusNotification, fetchLiveLocationNotification, fetchPoliceStationStatusNotification, fetchSafeArrivalNotification, markAllReadNotification, markAsReadNotification, markHospitalStatusReadNotification, markLiveLocationAsReadNotification, markPoliceStationReadNotification, markSafeArrivalAsReadNotification, saveEmergencyContactNotification, saveLiveLocationNotification, saveSafelyArraivalNotification, sendNotificationEmergencyContact, sendNotificationToNearestHospital, sendNotificationToNearestPoliceStation } from "../../controller/user/notification.controller.js";
 
 
 
@@ -21,6 +21,10 @@ notificationRouter.post("/fetchLiveLocationNotification" , authentication , fetc
 notificationRouter.post("/saveSafelyArrivalNotification" , authentication , saveSafelyArraivalNotification);
 notificationRouter.post("/fetchSafeArrivalNotification" , authentication , fetchSafeArrivalNotification);
 notificationRouter.post("/safeArrivalNotificationMarksAsRead" , authentication, markSafeArrivalAsReadNotification);
+notificationRouter.post("/fetchHospitalStatusNotification" , authentication , fetchHospitalStatusNotification);
+notificationRouter.post("/fetchPoliceStationStatusNotification" , authentication , fetchPoliceStationStatusNotification);
+notificationRouter.post("/hospitalComplaintStatusMarksAsRead" , authentication , markHospitalStatusReadNotification);
+notificationRouter.post("/policeStationComplaintStatusMarkAsRead" , authentication, markPoliceStationReadNotification);
 
 
 export default notificationRouter;
