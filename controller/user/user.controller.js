@@ -121,7 +121,7 @@ export const uploadImage = async(req,res) =>{
 export const fetchUserDetails = async (req, res) => {
   try {
     const { userId } = req.body;
-
+    console.log("=========" , userId);
     if (!userId) {
       return res.status(400).send('UserId not provided');
     }
@@ -136,7 +136,7 @@ export const fetchUserDetails = async (req, res) => {
       const userData = snapshot.val();
       
       
-      if (userData && userData.imageUrl) {
+      if (userData || userData.imageUrl) {
         if(userData.isDeleted && userData.deletionTime){
             if(userData.isDeleted){
                  let deletionDate = userData.deletionTime;
@@ -160,11 +160,18 @@ export const fetchUserDetails = async (req, res) => {
 
             }
         }
-        const { imageUrl } = userData;
-        const filePath = imageUrl.replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
 
-        const [imageBuffer] = await auth.storage().bucket().file(filePath).download();
-        return res.status(200).json({ userData, imageBuffer });
+
+
+        const { imageUrl } = userData;
+        if(imageUrl){
+          const filePath = imageUrl.replace("https://storage.googleapis.com/signal-55ec5.appspot.com/", "");
+
+          const [imageBuffer] = await auth.storage().bucket().file(filePath).download();
+          return res.status(200).json({ userData, imageBuffer });
+        }
+        return res.status(200).json({ userData });
+        
       } else {
         return res.status(400).send("User image URL not found");
       }
@@ -182,6 +189,7 @@ export const updateUserProfile = async(req,res) => {
     const bucket = auth.storage().bucket();
     const file = req.file;
     const {userId , edittedUsername} = req.body;
+    console.log(userId);
     if(!userId){
         return res.status(400).send('UserId not provided');  
     }
@@ -451,6 +459,8 @@ export const uploadComplaint = async(req,res) => {
 export const deleteAccount = async(req,res) => {
     const database = auth.database();
     const {userId} = req.body;
+   
+
     if(!userId){
       return res.status(400).send('UserId not provided');  
     } 
